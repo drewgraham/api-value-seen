@@ -1,0 +1,9 @@
+{
+  "name": "api-value-seen",
+  "version": "0.1.0",
+  "description": "Firefox extension and Cypress plugin to track API responses and DOM usage",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
