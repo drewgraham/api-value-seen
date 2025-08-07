@@ -1,1 +1,49 @@
 # api-value-seen
+
+A Firefox extension and Cypress plugin that intercept API requests, records fields from JSON responses, and tracks when those values first appear in the page's DOM.
+
+## Repository Structure
+- `firefox-extension/` – temporary Firefox add-on with popup UI, background script, and content script.
+- `cypress-plugin/` – Cypress plugin for recording API field usage during tests.
+
+## Firefox Extension
+
+1. Open `about:debugging#/runtime/this-firefox` in Firefox.
+2. Click **Load Temporary Add-on...** and choose `firefox-extension/manifest.json`.
+3. Use the extension popup to **Start Recording**, optionally specifying a comma-separated list of domains to monitor (leave blank for all domains) and a timeout in milliseconds (default 5000) to wait for field values to appear in the DOM.
+4. Browse as normal; logs will accumulate across pages until you **Stop Recording**.
+5. Review captured entries and timing details in the popup or click **Download Report** to save them as `api-report.json`.
+
+## Cypress Plugin
+
+1. Copy `cypress-plugin/index.js` into your project's `cypress/support` folder and import it from `cypress/support/e2e.js` (or `cypress/support/index.js` in Cypress <10):
+
+   ```js
+   import '../../path/to/index.js';
+   ```
+
+2. Start recording at the beginning of your test and optionally restrict domains or adjust the timeout (in ms):
+
+   ```js
+   cy.startApiRecording({ domains: ['api.example.com'], timeoutMs: 5000 });
+   ```
+
+3. Run your test actions. When finished, stop recording and save the report:
+
+   ```js
+   cy.stopApiRecording().then((report) => {
+     cy.writeFile('api-report.json', report);
+   });
+   ```
+
+The plugin tracks `fetch` and `XMLHttpRequest` calls across page loads and records how long it takes for each field value to appear in the DOM (up to the configured timeout, default five seconds).
+
+## Development
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+(There are currently no external dependencies, but the test confirms the Cypress plugin registers custom commands.)

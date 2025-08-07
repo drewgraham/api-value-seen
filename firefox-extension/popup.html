@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>API Tracker</title>
+  <style>
+    body { font-family: sans-serif; min-width: 300px; }
+    pre { max-height: 200px; overflow: auto; background: #f0f0f0; padding: 5px; }
+    input { width: 100%; }
+    button { margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h3>API Tracker</h3>
+  <label>Domains (comma separated):<br/>
+    <input id="domains" type="text" placeholder="example.com, api.example.com" />
+  </label>
+  <label>Timeout (ms):<br/>
+    <input id="timeout" type="number" value="5000" />
+  </label>
+  <div>
+    <button id="start">Start Recording</button>
+    <button id="stop">Stop Recording</button>
+    <button id="clear">Clear Logs</button>
+  </div>
+  <div>
+    <button id="download">Download Report</button>
+  </div>
+  <pre id="output"></pre>
+  <script src="popup.js"></script>
+</body>
+</html>
