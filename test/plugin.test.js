@@ -113,3 +113,19 @@ test('uses timeout when value never appears', { concurrency: false }, async () =
   assert.ok(field.lastCheckedMs >= 30);
   assert.ok(field.lastCheckedMs < 100);
 });
+
+test('ignores fetches to disallowed domains', { concurrency: false }, async () => {
+  const win = createWin({ foo: 'bar' });
+  windowHandler(win);
+
+  commands.startApiRecording({ domains: ['allowed.com'], timeoutMs: 30 });
+
+  await win.fetch('https://allowed.com/api');
+  await win.fetch('https://other.com/api');
+
+  await new Promise((r) => setTimeout(r, 60));
+
+  const report = commands.stopApiRecording();
+  assert.equal(report.length, 1);
+  assert.equal(report[0].url, 'https://allowed.com/api');
+});
