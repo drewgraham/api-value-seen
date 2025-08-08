@@ -94,6 +94,31 @@ test('records firstSeenMs when value appears in DOM', { concurrency: false }, as
   assert.deepEqual(commands.getApiReport(), report);
 });
 
+test('records delayed firstSeenMs when value appears before timeout', { concurrency: false }, async () => {
+  const win = createWin({ foo: 'bar' });
+  windowHandler(win);
+
+  commands.startApiRecording({ timeoutMs: 100 });
+
+  await win.fetch('https://example.com/api');
+
+  await new Promise((r) => setTimeout(r, 90));
+
+  win.document.body.innerText = 'bar';
+  win.triggerMutation();
+
+  await new Promise((r) => setTimeout(r, 0));
+
+  const report = commands.stopApiRecording();
+  assert.equal(report.length, 1);
+  const field = report[0].fields[0];
+  assert.equal(field.path, 'foo');
+  assert.equal(field.value, 'bar');
+  assert.ok(field.firstSeenMs >= 80);
+  assert.ok(field.firstSeenMs < 100);
+  assert.equal(field.firstSeenMs, field.lastCheckedMs);
+});
+
 test('uses timeout when value never appears', { concurrency: false }, async () => {
   const win = createWin({ missing: 'value' });
   windowHandler(win);
