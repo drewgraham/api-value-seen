@@ -20,7 +20,7 @@ global.Cypress = {
 
 global.cy = { wrap: (x) => x };
 
-await import('../cypress-plugin/index.js');
+await import('cypress-api-value-seen');
 
 test('cypress plugin registers custom commands', () => {
   assert.deepEqual(Object.keys(commands).sort(), ['getApiReport', 'startApiRecording', 'stopApiRecording']);

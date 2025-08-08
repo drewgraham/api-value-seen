@@ -16,10 +16,14 @@ A Firefox extension and Cypress plugin that intercept API requests, records fiel
 
 ## Cypress Plugin
 
-1. Copy `cypress-plugin/index.js` into your project's `cypress/support` folder and import it from `cypress/support/e2e.js` (or `cypress/support/index.js` in Cypress <10):
+1. Install the plugin and load it from your Cypress support file:
+
+   ```bash
+   npm install cypress-api-value-seen
+   ```
 
    ```js
-   import '../../path/to/index.js';
+   import 'cypress-api-value-seen';
    ```
 
 2. Start recording at the beginning of your test and optionally restrict domains or adjust the timeout (in ms):

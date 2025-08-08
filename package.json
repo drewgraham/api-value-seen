@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test"
+  },
+  "dependencies": {
+    "cypress-api-value-seen": "file:cypress-plugin"
   }
 }
