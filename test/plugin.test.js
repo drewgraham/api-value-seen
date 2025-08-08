@@ -113,3 +113,29 @@ test('uses timeout when value never appears', { concurrency: false }, async () =
   assert.ok(field.lastCheckedMs >= 30);
   assert.ok(field.lastCheckedMs < 100);
 });
+
+test('does not record API calls after stopping', { concurrency: false }, async () => {
+  const win = createWin({});
+  let call = 0;
+  win.fetch = async () => {
+    call++;
+    return new ResponseStub(call === 1 ? { first: 'one' } : { second: 'two' });
+  };
+  windowHandler(win);
+
+  commands.startApiRecording({ timeoutMs: 10 });
+
+  await win.fetch('https://example.com/first');
+  await new Promise((r) => setTimeout(r, 20));
+
+  const report = commands.stopApiRecording();
+  assert.equal(report.length, 1);
+  assert.equal(report[0].url, 'https://example.com/first');
+
+  await win.fetch('https://example.com/second');
+  await new Promise((r) => setTimeout(r, 20));
+
+  const finalReport = commands.getApiReport();
+  assert.deepEqual(finalReport, report);
+  assert.equal(finalReport.length, 1);
+});
