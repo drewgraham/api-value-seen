@@ -5,5 +5,22 @@
   "type": "module",
   "scripts": {
     "test": "node --test"
-  }
+  },
+  "license": "MIT",
+  "main": "cypress-plugin/index.js",
+  "files": [
+    "cypress-plugin",
+    "firefox-extension"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/api-value-seen.git"
+  },
+  "keywords": [
+    "cypress",
+    "plugin",
+    "api",
+    "dom"
+  ],
+  "author": ""
 }
