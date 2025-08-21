@@ -51,3 +51,10 @@ npm test
 ```
 
 (There are currently no external dependencies, but the test confirms the Cypress plugin registers custom commands.)
+
+To run the Cypress end-to-end tests, first install Cypress and then execute the test runner:
+
+```bash
+npm install --save-dev cypress
+npx cypress run
+```
