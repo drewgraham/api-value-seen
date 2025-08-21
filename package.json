@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "cypress-api-value-seen": "file:cypress-plugin"
+  },
+  "devDependencies": {
+    "cypress": "^15.0.0"
   }
 }
