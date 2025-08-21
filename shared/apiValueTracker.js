@@ -91,6 +91,7 @@ export function observeFields(win, fields, url, log, timeoutMs = 5000) {
       if (field.firstSeenMs === null) {
         field.lastCheckedMs = Math.max(field.lastCheckedMs, elapsed);
       }
+      field.apiPath = `${url}.${field.path}`;
     }
     log({ url, fields });
   }

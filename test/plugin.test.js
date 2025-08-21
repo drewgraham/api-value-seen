@@ -123,7 +123,13 @@ test('reports unseen values when they never appear', { concurrency: false }, asy
   assert.ok(field.lastCheckedMs >= 30);
   assert.ok(field.lastCheckedMs < 100);
   const expectedTable = [
-    { request: 'https://example.com/api', field: 'missing', value: 'value', seen: false }
+    {
+      request: 'https://example.com/api',
+      field: 'missing',
+      apiPath: 'https://example.com/api.missing',
+      value: 'value',
+      seen: false
+    }
   ];
   assert.deepEqual(tables[0], expectedTable);
   assert.equal(logs[0].name, 'api-values');
@@ -147,7 +153,13 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
   assert.equal(report.length, 1);
   assert.equal(report[0].url, 'https://allowed.com/api');
   const expectedTable = [
-    { request: 'https://allowed.com/api', field: 'foo', value: 'bar', seen: false }
+    {
+      request: 'https://allowed.com/api',
+      field: 'foo',
+      apiPath: 'https://allowed.com/api.foo',
+      value: 'bar',
+      seen: false
+    }
   ];
   assert.deepEqual(tables[0], expectedTable);
   assert.equal(logs[0].name, 'api-values');

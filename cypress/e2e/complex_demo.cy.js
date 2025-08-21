@@ -66,6 +66,7 @@ describe('complex API recording demo', () => {
       const hidden = report[0];
       expect(hidden.url).to.include('/api/third');
       expect(hidden.fields[0].path).to.equal('secret');
+      expect(hidden.fields[0].apiPath).to.equal('/api/third.secret');
       expect(hidden.fields[0].firstSeenMs).to.be.null;
     });
   });

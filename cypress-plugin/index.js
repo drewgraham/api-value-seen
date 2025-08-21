@@ -24,6 +24,7 @@ const buildTable = (data = unseenOnly()) => {
       table.push({
         request: url,
         field: field.path,
+        apiPath: field.apiPath || `${url}.${field.path}`,
         value: field.value,
         seen: false
       });
