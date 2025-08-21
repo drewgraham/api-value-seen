@@ -79,7 +79,7 @@ class ResponseStub {
   }
 }
 
-test('records firstSeenMs when value appears in DOM', { concurrency: false }, async () => {
+test('does not report values that appear in the DOM', { concurrency: false }, async () => {
   const win = createWin({ foo: 'bar' });
   windowHandler(win);
 
@@ -95,23 +95,14 @@ test('records firstSeenMs when value appears in DOM', { concurrency: false }, as
   tables.length = 0;
   logs.length = 0;
   const report = commands.stopApiRecording();
-  assert.equal(report.length, 1);
-  const field = report[0].fields[0];
-  assert.equal(field.path, 'foo');
-  assert.equal(field.value, 'bar');
-  assert.ok(field.firstSeenMs > 0);
-  assert.equal(field.firstSeenMs, field.lastCheckedMs);
-  assert.ok(field.firstSeenMs < 100);
-  assert.deepEqual(commands.getApiReport(), report);
-  const expectedTable = [
-    { request: 'https://example.com/api', field: 'foo', value: 'bar', seen: true }
-  ];
-  assert.deepEqual(tables[0], expectedTable);
+  assert.equal(report.length, 0);
+  assert.deepEqual(commands.getApiReport(), []);
+  assert.equal(tables.length, 0);
   assert.equal(logs[0].name, 'api-values');
-  assert.deepEqual(logs[0].consoleProps(), expectedTable);
+  assert.deepEqual(logs[0].consoleProps(), []);
 });
 
-test('uses timeout when value never appears', { concurrency: false }, async () => {
+test('reports unseen values when they never appear', { concurrency: false }, async () => {
   const win = createWin({ missing: 'value' });
   windowHandler(win);
 

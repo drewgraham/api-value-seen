@@ -22,9 +22,7 @@ describe('API recording plugin', () => {
     cy.visit('/test-page');
     cy.wait('@api');
     cy.stopApiRecording().then(report => {
-      expect(report[0].fields[0])
-        .to.have.property('firstSeenMs')
-        .and.be.lt(500);
+      expect(report).to.be.empty;
     });
   });
 
@@ -42,6 +40,7 @@ describe('API recording plugin', () => {
     cy.wait('@api');
     cy.wait(600);
     cy.stopApiRecording().then(report => {
+      expect(report).to.have.length(1);
       const field = report[0].fields[0];
       expect(field).to.have.property('firstSeenMs', null);
       expect(field.lastCheckedMs).to.be.gte(500);

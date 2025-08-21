@@ -40,9 +40,9 @@ A Firefox extension and Cypress plugin that intercept API requests, records fiel
    });
   ```
 
-   `stopApiRecording` logs a table summarizing each request and whether its
-   field values were seen in the DOM. When running `cypress run`, you can
-   register a task to print the same table from the Node process:
+   `stopApiRecording` logs a table of any API field values that never
+   appeared in the DOM. When running `cypress run`, you can register a task
+   to print the same table from the Node process:
 
    ```js
    // cypress.config.js
@@ -61,7 +61,7 @@ A Firefox extension and Cypress plugin that intercept API requests, records fiel
    });
    ```
 
-The plugin tracks `fetch` and `XMLHttpRequest` calls across page loads and records how long it takes for each field value to appear in the DOM (up to the configured timeout, default five seconds).
+The plugin tracks `fetch` and `XMLHttpRequest` calls across page loads and records how long it takes for each field value to appear in the DOM (up to the configured timeout, default five seconds). Only unseen values are included in the final report and logs.
 
 ## Development
 
