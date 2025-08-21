@@ -6,7 +6,9 @@ describe('complex API recording demo', () => {
 
     cy.intercept('/api/first', { body: { user: { name: 'Alice' }, shared: 'dup' } }).as('api1');
     cy.intercept('/api/second', { body: { info: { deep: { value: 'two' }, label: 'dup' } } }).as('api2');
-    cy.intercept('/api/third', { body: { secret: 'hidden' } }).as('api3');
+    cy.intercept('/api/third', {
+      body: { secure: { tokens: { primary: 'hidden', secondary: 'shadow' } } }
+    }).as('api3');
 
     cy.intercept('/page-a', {
       body: `<!DOCTYPE html><html><body>
@@ -65,8 +67,13 @@ describe('complex API recording demo', () => {
       expect(report).to.have.length(1);
       const hidden = report[0];
       expect(hidden.url).to.include('/api/third');
-      expect(hidden.fields[0].path).to.equal('secret');
+      expect(hidden.fields).to.have.length(2);
+      expect(hidden.fields[0].path).to.equal('secure.tokens.primary');
+      expect(hidden.fields[0].apiPath).to.equal('/api/third.secure.tokens.primary');
       expect(hidden.fields[0].firstSeenMs).to.be.null;
+      expect(hidden.fields[1].path).to.equal('secure.tokens.secondary');
+      expect(hidden.fields[1].apiPath).to.equal('/api/third.secure.tokens.secondary');
+      expect(hidden.fields[1].firstSeenMs).to.be.null;
     });
   });
 });
