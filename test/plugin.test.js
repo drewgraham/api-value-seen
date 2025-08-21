@@ -4,6 +4,11 @@ import { performance } from 'node:perf_hooks';
 
 const commands = {};
 let windowHandler;
+const tables = [];
+
+console.table = (data) => {
+  tables.push(data);
+};
 
 global.Cypress = {
   on: (event, fn) => {
@@ -83,6 +88,7 @@ test('records firstSeenMs when value appears in DOM', { concurrency: false }, as
 
   await new Promise((r) => setTimeout(r, 0));
 
+  tables.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
   const field = report[0].fields[0];
@@ -92,6 +98,9 @@ test('records firstSeenMs when value appears in DOM', { concurrency: false }, as
   assert.equal(field.firstSeenMs, field.lastCheckedMs);
   assert.ok(field.firstSeenMs < 100);
   assert.deepEqual(commands.getApiReport(), report);
+  assert.deepEqual(tables[0], [
+    { request: 'https://example.com/api', field: 'foo', value: 'bar', seen: true }
+  ]);
 });
 
 test('uses timeout when value never appears', { concurrency: false }, async () => {
@@ -104,6 +113,7 @@ test('uses timeout when value never appears', { concurrency: false }, async () =
 
   await new Promise((r) => setTimeout(r, 60));
 
+  tables.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
   const field = report[0].fields[0];
@@ -112,6 +122,9 @@ test('uses timeout when value never appears', { concurrency: false }, async () =
   assert.equal(field.firstSeenMs, null);
   assert.ok(field.lastCheckedMs >= 30);
   assert.ok(field.lastCheckedMs < 100);
+  assert.deepEqual(tables[0], [
+    { request: 'https://example.com/api', field: 'missing', value: 'value', seen: false }
+  ]);
 });
 
 test('ignores fetches to disallowed domains', { concurrency: false }, async () => {
@@ -125,7 +138,11 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
 
   await new Promise((r) => setTimeout(r, 60));
 
+  tables.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
   assert.equal(report[0].url, 'https://allowed.com/api');
+  assert.deepEqual(tables[0], [
+    { request: 'https://allowed.com/api', field: 'foo', value: 'bar', seen: false }
+  ]);
 });

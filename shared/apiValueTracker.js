@@ -86,6 +86,11 @@ export function observeFields(win, fields, url, log, timeoutMs = 5000) {
     if (finished) return;
     finished = true;
     win.clearTimeout(timeoutId);
+    for (const field of fields) {
+      if (field.firstSeenMs === null) {
+        field.lastCheckedMs = Math.max(field.lastCheckedMs, timeoutMs);
+      }
+    }
     log({ url, fields });
   }
 

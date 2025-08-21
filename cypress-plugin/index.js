@@ -25,6 +25,18 @@ Cypress.Commands.add('startApiRecording', (options = {}) => {
 
 Cypress.Commands.add('stopApiRecording', () => {
   recording = false;
+  const table = [];
+  for (const { url, fields } of report) {
+    for (const field of fields) {
+      table.push({
+        request: url,
+        field: field.path,
+        value: field.value,
+        seen: field.firstSeenMs !== null
+      });
+    }
+  }
+  if (table.length) console.table(table);
   return cy.wrap(report);
 });
 
