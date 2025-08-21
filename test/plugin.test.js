@@ -5,6 +5,7 @@ import { performance } from 'node:perf_hooks';
 const commands = {};
 let windowHandler;
 const tables = [];
+const logs = [];
 
 console.table = (data) => {
   tables.push(data);
@@ -15,6 +16,9 @@ global.Cypress = {
     if (event === 'window:before:load') {
       windowHandler = fn;
     }
+  },
+  log: (opts) => {
+    logs.push(opts);
   },
   Commands: {
     add: (name, fn) => {
@@ -89,6 +93,7 @@ test('records firstSeenMs when value appears in DOM', { concurrency: false }, as
   await new Promise((r) => setTimeout(r, 0));
 
   tables.length = 0;
+  logs.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
   const field = report[0].fields[0];
@@ -98,9 +103,12 @@ test('records firstSeenMs when value appears in DOM', { concurrency: false }, as
   assert.equal(field.firstSeenMs, field.lastCheckedMs);
   assert.ok(field.firstSeenMs < 100);
   assert.deepEqual(commands.getApiReport(), report);
-  assert.deepEqual(tables[0], [
+  const expectedTable = [
     { request: 'https://example.com/api', field: 'foo', value: 'bar', seen: true }
-  ]);
+  ];
+  assert.deepEqual(tables[0], expectedTable);
+  assert.equal(logs[0].name, 'api-values');
+  assert.deepEqual(logs[0].consoleProps(), expectedTable);
 });
 
 test('uses timeout when value never appears', { concurrency: false }, async () => {
@@ -114,6 +122,7 @@ test('uses timeout when value never appears', { concurrency: false }, async () =
   await new Promise((r) => setTimeout(r, 60));
 
   tables.length = 0;
+  logs.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
   const field = report[0].fields[0];
@@ -122,9 +131,12 @@ test('uses timeout when value never appears', { concurrency: false }, async () =
   assert.equal(field.firstSeenMs, null);
   assert.ok(field.lastCheckedMs >= 30);
   assert.ok(field.lastCheckedMs < 100);
-  assert.deepEqual(tables[0], [
+  const expectedTable = [
     { request: 'https://example.com/api', field: 'missing', value: 'value', seen: false }
-  ]);
+  ];
+  assert.deepEqual(tables[0], expectedTable);
+  assert.equal(logs[0].name, 'api-values');
+  assert.deepEqual(logs[0].consoleProps(), expectedTable);
 });
 
 test('ignores fetches to disallowed domains', { concurrency: false }, async () => {
@@ -139,10 +151,14 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
   await new Promise((r) => setTimeout(r, 60));
 
   tables.length = 0;
+  logs.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
   assert.equal(report[0].url, 'https://allowed.com/api');
-  assert.deepEqual(tables[0], [
+  const expectedTable = [
     { request: 'https://allowed.com/api', field: 'foo', value: 'bar', seen: false }
-  ]);
+  ];
+  assert.deepEqual(tables[0], expectedTable);
+  assert.equal(logs[0].name, 'api-values');
+  assert.deepEqual(logs[0].consoleProps(), expectedTable);
 });

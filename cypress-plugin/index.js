@@ -8,6 +8,21 @@ let timeoutMs = 5000;
 const shouldTrack = (url) =>
   domains.length === 0 || domains.some((d) => url.includes(d));
 
+const buildTable = (data = report) => {
+  const table = [];
+  for (const { url, fields } of data) {
+    for (const field of fields) {
+      table.push({
+        request: url,
+        field: field.path,
+        value: field.value,
+        seen: field.firstSeenMs !== null
+      });
+    }
+  }
+  return table;
+};
+
 Cypress.on('window:before:load', (win) => {
   interceptResponses(win, (data, url) => {
     if (!recording || !shouldTrack(url)) return;
@@ -25,17 +40,8 @@ Cypress.Commands.add('startApiRecording', (options = {}) => {
 
 Cypress.Commands.add('stopApiRecording', () => {
   recording = false;
-  const table = [];
-  for (const { url, fields } of report) {
-    for (const field of fields) {
-      table.push({
-        request: url,
-        field: field.path,
-        value: field.value,
-        seen: field.firstSeenMs !== null
-      });
-    }
-  }
+  const table = buildTable();
+  Cypress.log({ name: 'api-values', consoleProps: () => table });
   if (table.length) console.table(table);
   return cy.wrap(report);
 });
@@ -43,3 +49,9 @@ Cypress.Commands.add('stopApiRecording', () => {
 Cypress.Commands.add('getApiReport', () => {
   return cy.wrap(report);
 });
+
+export const getApiReportTask = (reportData = []) => {
+  const table = buildTable(reportData);
+  if (table.length) console.table(table);
+  return table;
+};
