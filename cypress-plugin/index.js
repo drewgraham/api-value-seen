@@ -4,6 +4,7 @@ let recording = false;
 let domains = [];
 let report = [];
 let timeoutMs = 5000;
+let finalizers = [];
 
 const shouldTrack = (url) =>
   domains.length === 0 || domains.some((d) => url.includes(d));
@@ -35,7 +36,14 @@ Cypress.on('window:before:load', (win) => {
   interceptResponses(win, (data, url) => {
     if (!recording || !shouldTrack(url)) return;
     const fields = collectFields(data);
-    observeFields(win, fields, url, (result) => report.push(result), timeoutMs);
+    const finalize = observeFields(
+      win,
+      fields,
+      url,
+      (result) => report.push(result),
+      timeoutMs
+    );
+    finalizers.push(finalize);
   });
 });
 
@@ -44,10 +52,12 @@ Cypress.Commands.add('startApiRecording', (options = {}) => {
   timeoutMs = options.timeoutMs || 5000;
   report = [];
   recording = true;
+  finalizers = [];
 });
 
 Cypress.Commands.add('stopApiRecording', () => {
   recording = false;
+  finalizers.forEach((fn) => fn());
   const unseen = unseenOnly();
   const table = buildTable(unseen);
   Cypress.log({ name: 'api-values', consoleProps: () => table });
