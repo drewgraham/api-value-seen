@@ -103,7 +103,7 @@ test('does not report values that appear in the DOM', { concurrency: false }, as
 });
 
 test('reports unseen values when they never appear', { concurrency: false }, async () => {
-  const win = createWin({ missing: 'value' });
+  const win = createWin({ missing: { deeper: { secret: 'value', other: 'alt' } } });
   windowHandler(win);
 
   commands.startApiRecording({ timeoutMs: 30 });
@@ -116,18 +116,32 @@ test('reports unseen values when they never appear', { concurrency: false }, asy
   logs.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
-  const field = report[0].fields[0];
-  assert.equal(field.path, 'missing');
-  assert.equal(field.value, 'value');
-  assert.equal(field.firstSeenMs, null);
-  assert.ok(field.lastCheckedMs >= 30);
-  assert.ok(field.lastCheckedMs < 100);
+  assert.equal(report[0].fields.length, 2);
+  const field1 = report[0].fields[0];
+  const field2 = report[0].fields[1];
+  assert.equal(field1.path, 'missing.deeper.secret');
+  assert.equal(field1.value, 'value');
+  assert.equal(field1.firstSeenMs, null);
+  assert.ok(field1.lastCheckedMs >= 30);
+  assert.ok(field1.lastCheckedMs < 100);
+  assert.equal(field2.path, 'missing.deeper.other');
+  assert.equal(field2.value, 'alt');
+  assert.equal(field2.firstSeenMs, null);
+  assert.ok(field2.lastCheckedMs >= 30);
+  assert.ok(field2.lastCheckedMs < 100);
   const expectedTable = [
     {
       request: 'https://example.com/api',
-      field: 'missing',
-      apiPath: 'https://example.com/api.missing',
+      field: 'missing.deeper.secret',
+      apiPath: 'https://example.com/api.missing.deeper.secret',
       value: 'value',
+      seen: false
+    },
+    {
+      request: 'https://example.com/api',
+      field: 'missing.deeper.other',
+      apiPath: 'https://example.com/api.missing.deeper.other',
+      value: 'alt',
       seen: false
     }
   ];
