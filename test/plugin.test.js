@@ -135,14 +135,16 @@ test('reports unseen values when they never appear', { concurrency: false }, asy
       field: 'missing.deeper.secret',
       apiPath: 'https://example.com/api.missing.deeper.secret',
       value: 'value',
-      seen: false
+      seen: false,
+      firstSeenMs: null
     },
     {
       request: 'https://example.com/api',
       field: 'missing.deeper.other',
       apiPath: 'https://example.com/api.missing.deeper.other',
       value: 'alt',
-      seen: false
+      seen: false,
+      firstSeenMs: null
     }
   ];
   assert.deepEqual(tables[0], expectedTable);
@@ -172,7 +174,8 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
       field: 'foo',
       apiPath: 'https://allowed.com/api.foo',
       value: 'bar',
-      seen: false
+      seen: false,
+      firstSeenMs: null
     }
   ];
   assert.deepEqual(tables[0], expectedTable);
