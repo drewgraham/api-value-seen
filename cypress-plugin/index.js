@@ -5,6 +5,9 @@ let domains = [];
 let report = [];
 let timeoutMs = 5000;
 let finalizers = [];
+let thresholdMs = Infinity;
+let excludePaths = [];
+let expectAbsentPaths = [];
 
 const shouldTrack = (url) =>
   domains.length === 0 || domains.some((d) => url.includes(d));
@@ -13,7 +16,16 @@ const unseenOnly = (data = report) =>
   data
     .map(({ url, fields }) => ({
       url,
-      fields: fields.filter((f) => f.firstSeenMs === null)
+      fields: fields.filter((f) => {
+        const apiPath = f.apiPath || `${url}.${f.path}`;
+        if (excludePaths.includes(apiPath)) return false;
+        if (expectAbsentPaths.includes(apiPath)) {
+          return f.firstSeenMs !== null;
+        }
+        if (f.firstSeenMs === null) return true;
+        if (f.firstSeenMs > thresholdMs) return true;
+        return false;
+      })
     }))
     .filter((r) => r.fields.length > 0);
 
@@ -26,7 +38,8 @@ const buildTable = (data = unseenOnly()) => {
         field: field.path,
         apiPath: field.apiPath || `${url}.${field.path}`,
         value: field.value,
-        seen: false
+        seen: field.firstSeenMs !== null,
+        firstSeenMs: field.firstSeenMs
       });
     }
   }
@@ -51,6 +64,9 @@ Cypress.on('window:before:load', (win) => {
 Cypress.Commands.add('startApiRecording', (options = {}) => {
   domains = (options.domains || []).map((d) => d.trim()).filter(Boolean);
   timeoutMs = options.timeoutMs || 5000;
+  thresholdMs = options.thresholdMs ?? Infinity;
+  excludePaths = (options.excludePaths || []).map((p) => p.trim()).filter(Boolean);
+  expectAbsentPaths = (options.expectAbsentPaths || []).map((p) => p.trim()).filter(Boolean);
   report = [];
   recording = true;
   finalizers = [];
