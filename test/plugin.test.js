@@ -53,13 +53,21 @@ function createWin(responseData) {
     setTimeout,
     clearTimeout,
     fetch: async () => new ResponseStub(responseData),
-    XMLHttpRequest: function () {}
+    XMLHttpRequest: function () {
+      this._listeners = {};
+    }
   };
 
   win.XMLHttpRequest.prototype = {
     open() {},
-    send() {},
-    addEventListener() {}
+    send() {
+      this.responseText = JSON.stringify(responseData);
+      const fn = this._listeners['load'];
+      if (fn) fn.call(this);
+    },
+    addEventListener(event, cb) {
+      this._listeners[event] = cb;
+    }
   };
 
   win.triggerMutation = () => observerCallback && observerCallback();
@@ -181,4 +189,29 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
   assert.deepEqual(tables[0], expectedTable);
   assert.equal(logs[0].name, 'api-values');
   assert.deepEqual(logs[0].consoleProps(), expectedTable);
+});
+
+test('records XHR responses when value appears in DOM', { concurrency: false }, async () => {
+  const win = createWin({ ping: 'pong' });
+  windowHandler(win);
+
+  commands.startApiRecording({ timeoutMs: 100 });
+
+  const xhr = new win.XMLHttpRequest();
+  xhr.open('GET', 'https://example.com/api');
+  xhr.send();
+
+  win.document.body.innerText = 'pong';
+  win.triggerMutation();
+
+  await new Promise((r) => setTimeout(r, 0));
+
+  const report = commands.stopApiRecording();
+  assert.equal(report.length, 1);
+  const field = report[0].fields[0];
+  assert.equal(field.path, 'ping');
+  assert.equal(field.value, 'pong');
+  assert.ok(field.firstSeenMs > 0);
+  assert.equal(field.firstSeenMs, field.lastCheckedMs);
+  assert.ok(field.firstSeenMs < 100);
 });
