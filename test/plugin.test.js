@@ -4,6 +4,7 @@ import { performance } from 'node:perf_hooks';
 
 const commands = {};
 let windowHandler;
+let interceptHandler;
 const tables = [];
 const logs = [];
 
@@ -27,7 +28,12 @@ global.Cypress = {
   }
 };
 
-global.cy = { wrap: (x) => x };
+global.cy = {
+  wrap: (x) => x,
+  intercept: (_matcher, handler) => {
+    interceptHandler = handler;
+  }
+};
 
 await import('../cypress-plugin/index.js');
 
@@ -52,7 +58,20 @@ function createWin(responseData) {
     performance: { now: () => performance.now() },
     setTimeout,
     clearTimeout,
-    fetch: async () => new ResponseStub(responseData),
+    async fetch(url) {
+      if (interceptHandler) {
+        await interceptHandler({
+          url,
+          continue: async (fn) => {
+            await fn({
+              headers: { 'content-type': 'application/json' },
+              body: responseData
+            });
+          }
+        });
+      }
+      return new ResponseStub(responseData);
+    },
     XMLHttpRequest: function () {}
   };
 
