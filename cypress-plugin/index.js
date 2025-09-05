@@ -1,4 +1,4 @@
-import { interceptResponses, collectFields, observeFields } from '../shared/apiValueTracker.js';
+import { collectFields, observeFields } from '../shared/apiValueTracker.js';
 
 let recording = false;
 let domains = [];
@@ -8,6 +8,7 @@ let finalizers = [];
 let thresholdMs = Infinity;
 let excludePaths = [];
 let expectAbsentPaths = [];
+let currentWin;
 
 const shouldTrack = (url) =>
   domains.length === 0 || domains.some((d) => url.includes(d));
@@ -47,11 +48,26 @@ const buildTable = (data = unseenOnly()) => {
 };
 
 Cypress.on('window:before:load', (win) => {
-  interceptResponses(win, (data, url) => {
-    if (!recording || !shouldTrack(url)) return;
+  currentWin = win;
+});
+
+cy.intercept('**', (req) => {
+  req.continue((res) => {
+    const url = req.url;
+    if (!recording || !currentWin || !shouldTrack(url)) return;
+    const ct = res.headers && (res.headers['content-type'] || res.headers['Content-Type'] || '');
+    if (!ct.includes('application/json')) return;
+    let data = res.body;
+    try {
+      if (typeof data === 'string') {
+        data = JSON.parse(data);
+      }
+    } catch (e) {
+      return;
+    }
     const fields = collectFields(data);
     const finalize = observeFields(
-      win,
+      currentWin,
       fields,
       url,
       (result) => report.push(result),

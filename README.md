@@ -61,7 +61,7 @@ A Firefox extension and Cypress plugin that intercept API requests, records fiel
    });
    ```
 
-The plugin tracks `fetch` and `XMLHttpRequest` calls across page loads and records how long it takes for each field value to appear in the DOM (up to the configured timeout, default five seconds). Only unseen values are included in the final report and logs.
+The plugin uses `cy.intercept` to watch API requests across page loads and records how long it takes for each field value to appear in the DOM (up to the configured timeout, default five seconds). Only unseen values are included in the final report and logs.
 
 ## Development
 
