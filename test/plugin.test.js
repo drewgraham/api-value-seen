@@ -201,3 +201,27 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
   assert.equal(logs[0].name, 'api-values');
   assert.deepEqual(logs[0].consoleProps(), expectedTable);
 });
+
+test('resets report between recordings', { concurrency: false }, async () => {
+  const responseData = { run: 'first' };
+  const win = createWin(responseData);
+  windowHandler(win);
+
+  commands.startApiRecording({ timeoutMs: 10 });
+  await win.fetch('https://example.com/api1');
+  await new Promise((r) => setTimeout(r, 20));
+  commands.stopApiRecording();
+
+  responseData.run = 'second';
+
+  commands.startApiRecording({ timeoutMs: 10 });
+  await win.fetch('https://example.com/api2');
+  await new Promise((r) => setTimeout(r, 20));
+  const report = commands.stopApiRecording();
+
+  assert.equal(report.length, 1);
+  const field = report[0].fields[0];
+  assert.equal(field.path, 'run');
+  assert.equal(field.value, 'second');
+  assert.deepEqual(commands.getApiReport(), report);
+});
