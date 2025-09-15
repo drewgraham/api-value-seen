@@ -5,6 +5,7 @@ import { performance } from 'node:perf_hooks';
 const commands = {};
 let windowHandler;
 let interceptHandler;
+let restoreCount = 0;
 const tables = [];
 const logs = [];
 
@@ -32,6 +33,15 @@ global.cy = {
   wrap: (x) => x,
   intercept: (_matcher, handler) => {
     interceptHandler = handler;
+    const interceptor = {
+      restore: () => {
+        interceptHandler = null;
+        restoreCount++;
+      }
+    };
+    return {
+      then: (fn) => fn(interceptor)
+    };
   }
 };
 
@@ -60,15 +70,19 @@ function createWin(responseData) {
     clearTimeout,
     async fetch(url) {
       if (interceptHandler) {
-        await interceptHandler({
+        const events = {};
+        interceptHandler({
           url,
-          continue: async (fn) => {
-            await fn({
-              headers: { 'content-type': 'application/json' },
-              body: responseData
-            });
+          on: (event, cb) => {
+            events[event] = cb;
           }
         });
+        if (events['after:response']) {
+          await events['after:response']({
+            headers: { 'content-type': 'application/json' },
+            body: responseData
+          });
+        }
       }
       return new ResponseStub(responseData);
     },
@@ -150,17 +164,17 @@ test('reports unseen values when they never appear', { concurrency: false }, asy
   assert.ok(field2.lastCheckedMs < 100);
   const expectedTable = [
     {
-      request: 'https://example.com/api',
+      request: '/api',
       field: 'missing.deeper.secret',
-      apiPath: 'https://example.com/api.missing.deeper.secret',
+      apiPath: '/api.missing.deeper.secret',
       value: 'value',
       seen: false,
       firstSeenMs: null
     },
     {
-      request: 'https://example.com/api',
+      request: '/api',
       field: 'missing.deeper.other',
-      apiPath: 'https://example.com/api.missing.deeper.other',
+      apiPath: '/api.missing.deeper.other',
       value: 'alt',
       seen: false,
       firstSeenMs: null
@@ -186,12 +200,12 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
   logs.length = 0;
   const report = commands.stopApiRecording();
   assert.equal(report.length, 1);
-  assert.equal(report[0].url, 'https://allowed.com/api');
+  assert.equal(report[0].url, '/api');
   const expectedTable = [
     {
-      request: 'https://allowed.com/api',
+      request: '/api',
       field: 'foo',
-      apiPath: 'https://allowed.com/api.foo',
+      apiPath: '/api.foo',
       value: 'bar',
       seen: false,
       firstSeenMs: null
@@ -200,4 +214,17 @@ test('ignores fetches to disallowed domains', { concurrency: false }, async () =
   assert.deepEqual(tables[0], expectedTable);
   assert.equal(logs[0].name, 'api-values');
   assert.deepEqual(logs[0].consoleProps(), expectedTable);
+});
+
+test('tears down intercept after stopping', { concurrency: false }, async () => {
+  const win = createWin({ foo: 'bar' });
+  windowHandler(win);
+
+  restoreCount = 0;
+  commands.startApiRecording({ timeoutMs: 30 });
+  await win.fetch('https://example.com/api');
+  commands.stopApiRecording();
+
+  assert.equal(interceptHandler, null);
+  assert.equal(restoreCount, 1);
 });
