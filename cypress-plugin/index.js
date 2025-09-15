@@ -9,6 +9,7 @@ let thresholdMs = Infinity;
 let excludePaths = [];
 let expectAbsentPaths = [];
 let currentWin;
+let interceptor;
 
 const shouldTrack = (url) =>
   domains.length === 0 || domains.some((d) => url.includes(d));
@@ -51,10 +52,14 @@ Cypress.on('window:before:load', (win) => {
   currentWin = win;
 });
 
-cy.intercept('**', (req) => {
-  req.continue((res) => {
-    const url = req.url;
-    if (!recording || !currentWin || !shouldTrack(url)) return;
+const interceptHandler = (req) => {
+  req.on('after:response', (res) => {
+    const fullUrl = req.url;
+    if (!recording || !currentWin || !shouldTrack(fullUrl)) return;
+    let url = fullUrl;
+    try {
+      url = new URL(fullUrl).pathname;
+    } catch {}
     const ct = res.headers && (res.headers['content-type'] || res.headers['Content-Type'] || '');
     if (!ct.includes('application/json')) return;
     let data = res.body;
@@ -75,7 +80,7 @@ cy.intercept('**', (req) => {
     );
     finalizers.push(finalize);
   });
-});
+};
 
 Cypress.Commands.add('startApiRecording', (options = {}) => {
   domains = (options.domains || []).map((d) => d.trim()).filter(Boolean);
@@ -86,11 +91,18 @@ Cypress.Commands.add('startApiRecording', (options = {}) => {
   report = [];
   recording = true;
   finalizers = [];
+  return cy.intercept({ url: '**', middleware: true }, interceptHandler).then((i) => {
+    interceptor = i;
+  });
 });
 
 Cypress.Commands.add('stopApiRecording', () => {
   recording = false;
   finalizers.forEach((fn) => fn());
+  if (interceptor) {
+    interceptor.restore();
+    interceptor = null;
+  }
   const unseen = unseenOnly();
   const table = buildTable(unseen);
   Cypress.log({ name: 'api-values', consoleProps: () => table });

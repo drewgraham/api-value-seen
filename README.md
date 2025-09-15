@@ -32,6 +32,10 @@ A Firefox extension and Cypress plugin that intercept API requests, records fiel
    cy.startApiRecording({ domains: ['api.example.com'], timeoutMs: 5000 });
    ```
 
+   `startApiRecording` attaches an internal `cy.intercept` listener for the
+   duration of your test. Define any other `cy.intercept` stubs first, then
+   call it before triggering requests you want to monitor.
+
 3. Run your test actions. When finished, stop recording and save the report:
 
    ```js
@@ -40,9 +44,9 @@ A Firefox extension and Cypress plugin that intercept API requests, records fiel
    });
   ```
 
-   `stopApiRecording` logs a table of any API field values that never
-   appeared in the DOM. When running `cypress run`, you can register a task
-   to print the same table from the Node process:
+   `stopApiRecording` tears down the intercept and logs a table of any API
+   field values that never appeared in the DOM. When running `cypress run`,
+   you can register a task to print the same table from the Node process:
 
    ```js
    // cypress.config.js
